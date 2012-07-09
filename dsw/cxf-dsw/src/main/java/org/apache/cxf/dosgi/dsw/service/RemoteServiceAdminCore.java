@@ -18,6 +18,7 @@
  */
 package org.apache.cxf.dosgi.dsw.service;
 
+import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -36,9 +37,11 @@ import org.apache.cxf.common.logging.LogUtils;
 import org.apache.cxf.dosgi.dsw.ClassUtils;
 import org.apache.cxf.dosgi.dsw.Constants;
 import org.apache.cxf.dosgi.dsw.OsgiUtils;
+import org.apache.cxf.dosgi.dsw.RemoteServiceFactory;
 import org.apache.cxf.dosgi.dsw.handlers.ClientServiceFactory;
 import org.apache.cxf.dosgi.dsw.handlers.ConfigTypeHandlerFactory;
 import org.apache.cxf.dosgi.dsw.handlers.ConfigurationTypeHandler;
+import org.apache.cxf.dosgi.dsw.handlers.RemoteServiceFactoryHandler;
 import org.apache.cxf.dosgi.dsw.qos.IntentMap;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -228,22 +231,24 @@ public class RemoteServiceAdminCore implements RemoteServiceAdmin {
                 ExportRegistrationImpl exportRegistration = exportRegs.get(iface);
                 ConfigurationTypeHandler handler = getHandler(configurationTypes, serviceProperties,
                                                               getHandlerProperties());
-                Object serviceObject = bctx.getService(serviceReference);
-                BundleContext callingContext = serviceReference.getBundle().getBundleContext();
 
                 if (handler == null) {
                     // TODO: publish error event ? not sure
                     return Collections.EMPTY_LIST;
                 }
-
                 LOG.info("found handler for " + iface + "  -> " + handler);
 
-                String interfaceName = iface;
-                // this is an extra sanity check, but do we really need it now ?
-                Class<?> interfaceClass = ClassUtils.getInterfaceClass(serviceObject, interfaceName);
+                Object serviceObject = bctx.getService(serviceReference);
+                Class<?> interfaceClass = ClassUtils.getInterfaceClass(serviceObject, iface);
 
                 if (interfaceClass != null) {
+                    Object rsf = serviceReference.getProperty("org.coderthoughts.remote.service.factory");
+                    if (rsf instanceof RemoteServiceFactory) {
+                        RemoteServiceFactoryHandler rsfHandler = new RemoteServiceFactoryHandler((RemoteServiceFactory) rsf);
+                        serviceObject = Proxy.newProxyInstance(serviceObject.getClass().getClassLoader(), new Class<?>[] {interfaceClass}, rsfHandler);
+                    }
 
+                    BundleContext callingContext = serviceReference.getBundle().getBundleContext();
                     handler.createServer(exportRegistration, bctx, callingContext, serviceProperties,
                                          interfaceClass, serviceObject);
 
@@ -251,12 +256,10 @@ public class RemoteServiceAdminCore implements RemoteServiceAdmin {
                         LOG.info("created server for interface " + iface);
 
                         exportRegistration.startServiceTracker(bctx);
-                    }else{
+                    } else {
                         LOG.warning("server creation for interface " + iface + "  failed!");
                         // Fire event happens at the end
                     }
-
-
                 }
             }
 

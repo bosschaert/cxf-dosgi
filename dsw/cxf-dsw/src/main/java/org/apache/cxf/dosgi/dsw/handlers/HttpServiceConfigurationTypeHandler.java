@@ -1,23 +1,24 @@
-/** 
- * Licensed to the Apache Software Foundation (ASF) under one 
- * or more contributor license agreements. See the NOTICE file 
- * distributed with this work for additional information 
- * regarding copyright ownership. The ASF licenses this file 
- * to you under the Apache License, Version 2.0 (the 
- * "License"); you may not use this file except in compliance 
- * with the License. You may obtain a copy of the License at 
- * 
- * http://www.apache.org/licenses/LICENSE-2.0 
- * 
- * Unless required by applicable law or agreed to in writing, 
- * software distributed under the License is distributed on an 
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY 
- * KIND, either express or implied. See the License for the 
- * specific language governing permissions and limitations 
- * under the License. 
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package org.apache.cxf.dosgi.dsw.handlers;
 
+import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,6 +28,10 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.apache.cxf.Bus;
 import org.apache.cxf.aegis.databinding.AegisDatabinding;
@@ -58,7 +63,7 @@ public class HttpServiceConfigurationTypeHandler extends AbstractPojoConfigurati
 
     Set<ServiceReference> httpServiceReferences = new CopyOnWriteArraySet<ServiceReference>();
     Map<Long, String> exportedAliases = Collections.synchronizedMap(new HashMap<Long, String>());
-    
+
     protected HttpServiceConfigurationTypeHandler(BundleContext dswBC,
 
     Map<String, Object> handlerProps) {
@@ -104,7 +109,7 @@ public class HttpServiceConfigurationTypeHandler extends AbstractPojoConfigurati
             ClientProxyFactoryBean factory = createClientProxyFactoryBean(frontEndImpl);
             addWsInterceptorsFeaturesProps(factory.getClientFactoryBean(), callingContext, sd.getProperties());
             setClientWsdlProperties(factory.getClientFactoryBean(), dswContext, sd.getProperties(), false);
-            
+
             factory.setServiceClass(iClass);
             factory.setAddress(address);
             factory.getServiceFactory().setDataBinding(databinding);
@@ -145,8 +150,8 @@ public class HttpServiceConfigurationTypeHandler extends AbstractPojoConfigurati
         String frontEndImpl = (String)exportRegistration.getExportedService()
             .getProperty(Constants.WS_FRONTEND_PROP_KEY);
         String frontEndImpl2 = (String) sref.getProperty(Constants.WS_FRONTEND_PROP_KEY);
-        
-        ServerFactoryBean factory = 
+
+        ServerFactoryBean factory =
         	createServerFactoryBean(frontEndImpl != null ? frontEndImpl : frontEndImpl2);
         String address = constructAddress(dswContext, contextRoot);
         factory.setBus(bus);
@@ -154,11 +159,11 @@ public class HttpServiceConfigurationTypeHandler extends AbstractPojoConfigurati
         factory.setAddress("/");
         factory.getServiceFactory().setDataBinding(databinding);
         factory.setServiceBean(serviceBean);
-        
+
         addWsInterceptorsFeaturesProps(factory, callingContext, sd);
-        
+
         setWsdlProperties(factory, dswContext, sd, false);
-        
+
         ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
         try {
             String[] intents = applyIntents(dswContext, callingContext, factory.getFeatures(), factory, sd);
@@ -168,13 +173,13 @@ public class HttpServiceConfigurationTypeHandler extends AbstractPojoConfigurati
                 Constants.WS_CONFIG_TYPE
             }, address,intents);
             EndpointDescription endpdDesc = null;
-            
+
             Thread.currentThread().setContextClassLoader(ServerFactoryBean.class.getClassLoader());
             Server server = factory.create();
-            
+
             endpdDesc = new EndpointDescription(endpointProps);
             exportRegistration.setServer(server);
-     
+
             // add the information on the new Endpoint to the export registration
             exportRegistration.setEndpointdescription(endpdDesc);
         } catch (IntentUnsatifiedException iue) {
@@ -182,19 +187,35 @@ public class HttpServiceConfigurationTypeHandler extends AbstractPojoConfigurati
         } finally {
             Thread.currentThread().setContextClassLoader(oldClassLoader);
         }
-        
-     
+
+
     }
-    
+
     protected Bus registerServletAndGetBus(String contextRoot, BundleContext dswContext,
     		ExportRegistrationImpl exportRegistration) {
-    	CXFNonSpringServlet cxf = new CXFNonSpringServlet();
+    	CXFNonSpringServlet cxf = new CXFNonSpringServlet() {
+            @Override
+            protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException {
+                System.out.println("*** In the HTTP do post. Remote host: " + request.getRemoteHost());
+
+                // TODO can we not do this in a more generic method? Like service()?
+                RemoteServiceFactoryHandler.ipAddress.set(request.getRemoteHost());
+
+                super.doPost(request, response);
+            }
+
+            @Override
+            protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+                System.out.println("*** In the HTTP Service. Remote host: " + req.getRemoteHost());
+                super.service(req, resp);
+            }
+    	};
         HttpService httpService = getHttpService();
         try {
-            httpService.registerServlet(contextRoot, cxf, new Hashtable<String, String>(), 
+            httpService.registerServlet(contextRoot, cxf, new Hashtable<String, String>(),
                                        getHttpContext(dswContext, httpService));
             registerUnexportHook(exportRegistration, contextRoot);
-            
+
             LOG.info("Successfully registered CXF DOSGi servlet at " + contextRoot);
         } catch (Exception e) {
             throw new ServiceException("CXF DOSGi: problem registering CXF HTTP Servlet", e);
@@ -256,15 +277,15 @@ public class HttpServiceConfigurationTypeHandler extends AbstractPojoConfigurati
         HttpContext httpContext = httpService.createDefaultHttpContext();
         return new SecurityDelegatingHttpContext(bundleContext, httpContext);
     }
-    
+
     protected String getHttpServiceAddress(Map sd, Class<?> iClass) {
         String address = OsgiUtils.getProperty(sd, RemoteConstants.ENDPOINT_ID);
         if(address == null && sd.get(RemoteConstants.ENDPOINT_ID)!=null ){
             LOG.severe("Could not use address property " + RemoteConstants.ENDPOINT_ID );
             return null;
         }
-        
-        
+
+
         if (address == null) {
             address = OsgiUtils.getProperty(sd, Constants.WS_ADDRESS_PROPERTY);
         }
@@ -272,7 +293,7 @@ public class HttpServiceConfigurationTypeHandler extends AbstractPojoConfigurati
             LOG.severe("Could not use address property " + Constants.WS_ADDRESS_PROPERTY );
             return null;
         }
-        
+
         if (address == null) {
             address = OsgiUtils.getProperty(sd, Constants.WS_ADDRESS_PROPERTY_OLD);
         }
@@ -280,7 +301,7 @@ public class HttpServiceConfigurationTypeHandler extends AbstractPojoConfigurati
             LOG.severe("Could not use address property " + Constants.WS_ADDRESS_PROPERTY_OLD);
             return null;
         }
-        
+
         if (address == null) {
             address = OsgiUtils.getProperty(sd, Constants.RS_ADDRESS_PROPERTY);
         }
@@ -291,11 +312,11 @@ public class HttpServiceConfigurationTypeHandler extends AbstractPojoConfigurati
 
         return address;
     }
-    
+
     /**
      * This listens for service removal events and "un-exports" the service
      * from the HttpService.
-     * 
+     *
      * @param reference The service reference to track
      * @param alias The HTTP servlet context alias
      */
@@ -303,18 +324,18 @@ public class HttpServiceConfigurationTypeHandler extends AbstractPojoConfigurati
     	final ServiceReference sref = export.getExportedService();
         final Long sid = (Long) sref.getProperty(org.osgi.framework.Constants.SERVICE_ID);
         LOG.log(Level.FINE, "Registering service listener for service with ID {0}", sid);
-     
+
         String previous = exportedAliases.put(sid, alias);
         if(previous != null) {
             LOG.log(Level.WARNING, "Overwriting service export for service with ID {0}", sid);
         }
-        
+
         try {
             Filter f = bundleContext.createFilter("(" + org.osgi.framework.Constants.SERVICE_ID + "=" + sid + ")");
-            
+
             if(f != null) {
                 bundleContext.addServiceListener(new ServiceListener() {
-     
+
                     public void serviceChanged(ServiceEvent event) {
 
                         if (event.getType() == ServiceEvent.UNREGISTERING) {
