@@ -30,8 +30,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 
 import org.apache.cxf.Bus;
 import org.apache.cxf.aegis.databinding.AegisDatabinding;
@@ -195,21 +195,13 @@ public class HttpServiceConfigurationTypeHandler extends AbstractPojoConfigurati
     		ExportRegistrationImpl exportRegistration) {
     	CXFNonSpringServlet cxf = new CXFNonSpringServlet() {
             @Override
-            protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException {
-                System.out.println("*** In the HTTP do post. Remote host: " + request.getRemoteHost());
-
-                // TODO can we not do this in a more generic method? Like service()?
+            public void service(ServletRequest request, ServletResponse response) throws ServletException, IOException {
+                // TODO this also needs to be available in plain Jetty requests, not just for the HTTP service
                 RemoteServiceFactoryHandler.ipAddress.set(request.getRemoteHost());
-
-                super.doPost(request, response);
-            }
-
-            @Override
-            protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-                System.out.println("*** In the HTTP Service. Remote host: " + req.getRemoteHost());
-                super.service(req, resp);
+                super.service(request, response);
             }
     	};
+
         HttpService httpService = getHttpService();
         try {
             httpService.registerServlet(contextRoot, cxf, new Hashtable<String, String>(),

@@ -22,22 +22,29 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 
 import org.apache.cxf.dosgi.dsw.RemoteServiceFactory;
+import org.osgi.framework.ServiceReference;
 
 public class RemoteServiceFactoryHandler implements InvocationHandler {
     static ThreadLocal<String> ipAddress = new ThreadLocal<String>();
 
-    private RemoteServiceFactory remoteServiceFactory;
+    private final ServiceReference serviceReference;
+    private final RemoteServiceFactory remoteServiceFactory;
 
-    public RemoteServiceFactoryHandler(RemoteServiceFactory factory) {
+    public RemoteServiceFactoryHandler(ServiceReference sr, RemoteServiceFactory factory) {
+        serviceReference = sr;
         remoteServiceFactory = factory;
     }
 
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         String clientIP = ipAddress.get();
         if (clientIP == null)
-            clientIP = ""; // TODO remove this
+            throw new IllegalArgumentException("Unable to establish client IP");
 
-        Object svc = remoteServiceFactory.getService(clientIP, null /* TODO */);
-        return method.invoke(svc, args);
+        Object svc = remoteServiceFactory.getService(clientIP, serviceReference);
+        try {
+            return method.invoke(svc, args);
+        } finally {
+            remoteServiceFactory.ungetService(clientIP, serviceReference, svc);
+        }
     }
 }

@@ -210,8 +210,7 @@ public class RemoteServiceAdminCore implements RemoteServiceAdmin {
                 return Collections.EMPTY_LIST;
             }
 
-            LinkedHashMap<String, ExportRegistrationImpl> exportRegs = new LinkedHashMap<String, ExportRegistrationImpl>(
-                                                                                                                         1);
+            LinkedHashMap<String, ExportRegistrationImpl> exportRegs = new LinkedHashMap<String, ExportRegistrationImpl>(1);
 
             for (String iface : interfaces) {
                 LOG.info("creating initial ExportDescription for interface " + iface
@@ -244,7 +243,7 @@ public class RemoteServiceAdminCore implements RemoteServiceAdmin {
                 if (interfaceClass != null) {
                     Object rsf = serviceReference.getProperty("org.coderthoughts.remote.service.factory");
                     if (rsf instanceof RemoteServiceFactory) {
-                        RemoteServiceFactoryHandler rsfHandler = new RemoteServiceFactoryHandler((RemoteServiceFactory) rsf);
+                        RemoteServiceFactoryHandler rsfHandler = new RemoteServiceFactoryHandler(serviceReference, (RemoteServiceFactory) rsf);
                         serviceObject = Proxy.newProxyInstance(serviceObject.getClass().getClassLoader(), new Class<?>[] {interfaceClass}, rsfHandler);
                     }
 
