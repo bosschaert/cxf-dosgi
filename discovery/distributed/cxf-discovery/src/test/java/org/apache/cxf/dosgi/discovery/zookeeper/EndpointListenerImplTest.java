@@ -22,6 +22,7 @@ import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import junit.framework.TestCase;
 
@@ -138,7 +139,7 @@ public class EndpointListenerImplTest extends TestCase {
                 EasyMock.eq(Ids.OPEN_ACL_UNSAFE),
                 EasyMock.eq(CreateMode.EPHEMERAL))).andReturn("");
         EasyMock.replay(zk);
-        ZooKeeperDiscovery zkd = new ZooKeeperDiscovery(ctx, null) {
+        ZooKeeperDiscovery zkd = new ZooKeeperDiscovery(ctx, new Properties()) {
             @Override
             protected ZooKeeper getZookeeper() {
                 return zk;
