@@ -23,7 +23,7 @@ import org.osgi.framework.ServiceReference;
 /**
  * Provides control over services used by remote clients.
  */
-public interface RemoteServiceFactory {
+public interface RemoteServiceFactory<T> {
     /**
      * Called before every invocation of the service by a remote client.
      *
@@ -31,7 +31,7 @@ public interface RemoteServiceFactory {
      * @param reference The OSGi Service Reference of the service being invoked.
      * @return The Service Object for the client to use.
      */
-    public Object getService(String clientIP, ServiceReference reference);
+    public T getService(String clientIP, ServiceReference /*<T>*/ reference);
 
     /**
      * Called after every invocation of the service by a remote client.
@@ -40,5 +40,5 @@ public interface RemoteServiceFactory {
      * @param reference The OSGi Service Reference of the service that was invoked.
      * @param service The Service Object that the client invoked.
      */
-    public void ungetService(String clientIP, ServiceReference reference, Object service);
+    public void ungetService(String clientIP, ServiceReference /*<T>*/ reference, T service);
 }
