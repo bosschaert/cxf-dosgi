@@ -20,6 +20,7 @@ package org.apache.cxf.dosgi.dsw.handlers;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.security.Principal;
 
 import org.apache.cxf.dosgi.dsw.RemoteServiceFactory;
 import org.osgi.framework.ServiceReference;
@@ -40,11 +41,25 @@ public class RemoteServiceFactoryHandler implements InvocationHandler {
         if (clientIP == null)
             throw new IllegalArgumentException("Unable to establish client IP");
 
-        Object svc = remoteServiceFactory.getService(clientIP, serviceReference);
+        Principal principal = new CXFClientIPPrincipal(clientIP);
+
+        Object svc = remoteServiceFactory.getService(principal, serviceReference);
         try {
             return method.invoke(svc, args);
         } finally {
-            remoteServiceFactory.ungetService(clientIP, serviceReference, svc);
+            remoteServiceFactory.ungetService(principal, serviceReference, svc);
+        }
+    }
+
+    static class CXFClientIPPrincipal implements Principal {
+        private final String ipAddress;
+
+        public CXFClientIPPrincipal(String ipaddr) {
+            ipAddress = ipaddr;
+        }
+
+        public String getName() {
+            return ipAddress;
         }
     }
 }

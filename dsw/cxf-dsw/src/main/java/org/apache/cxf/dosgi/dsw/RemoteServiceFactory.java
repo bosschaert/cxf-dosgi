@@ -18,6 +18,8 @@
  */
 package org.apache.cxf.dosgi.dsw;
 
+import java.security.Principal;
+
 import org.osgi.framework.ServiceReference;
 
 /**
@@ -31,7 +33,7 @@ public interface RemoteServiceFactory<T> {
      * @param reference The OSGi Service Reference of the service being invoked.
      * @return The Service Object for the client to use.
      */
-    public T getService(String clientIP, ServiceReference /*<T>*/ reference);
+    public T getService(Principal client, ServiceReference /*<T>*/ reference);
 
     /**
      * Called after every invocation of the service by a remote client.
@@ -40,5 +42,5 @@ public interface RemoteServiceFactory<T> {
      * @param reference The OSGi Service Reference of the service that was invoked.
      * @param service The Service Object that the client invoked.
      */
-    public void ungetService(String clientIP, ServiceReference /*<T>*/ reference, T service);
+    public void ungetService(Principal client, ServiceReference /*<T>*/ reference, T service);
 }
