@@ -22,6 +22,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.security.Principal;
 
+import org.apache.cxf.dosgi.dsw.ClientInfo;
 import org.apache.cxf.dosgi.dsw.RemoteServiceFactory;
 import org.osgi.framework.ServiceReference;
 
@@ -31,7 +32,7 @@ public class RemoteServiceFactoryHandler implements InvocationHandler {
     private final ServiceReference serviceReference;
     private final RemoteServiceFactory remoteServiceFactory;
 
-    public RemoteServiceFactoryHandler(ServiceReference sr, RemoteServiceFactory factory) {
+    public RemoteServiceFactoryHandler(ServiceReference sr, RemoteServiceFactory<?> factory) {
         serviceReference = sr;
         remoteServiceFactory = factory;
     }
@@ -41,25 +42,33 @@ public class RemoteServiceFactoryHandler implements InvocationHandler {
         if (clientIP == null)
             throw new IllegalArgumentException("Unable to establish client IP");
 
-        Principal principal = new CXFClientIPPrincipal(clientIP);
+        ClientInfo clientInfo = new CXFClientInfo(clientIP);
 
-        Object svc = remoteServiceFactory.getService(principal, serviceReference);
+        Object svc = remoteServiceFactory.getService(clientInfo, serviceReference);
         try {
             return method.invoke(svc, args);
         } finally {
-            remoteServiceFactory.ungetService(principal, serviceReference, svc);
+            remoteServiceFactory.ungetService(clientInfo, serviceReference, svc);
         }
     }
 
-    static class CXFClientIPPrincipal implements Principal {
-        private final String ipAddress;
+    private static class CXFClientInfo implements ClientInfo {
+        private final String ip;
 
-        public CXFClientIPPrincipal(String ipaddr) {
-            ipAddress = ipaddr;
+        public CXFClientInfo(String clientIP) {
+            ip = clientIP;
         }
 
-        public String getName() {
-            return ipAddress;
+        public String getHostIPAddress() {
+            return ip;
+        }
+
+        public String getFrameworkUUID() {
+            return null; // TODO
+        }
+
+        public Principal getPrincipal() {
+            return null; // TODO
         }
     }
 }
