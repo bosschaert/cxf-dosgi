@@ -70,5 +70,10 @@ public class RemoteServiceFactoryHandler implements InvocationHandler {
         public Principal getPrincipal() {
             return null; // TODO
         }
+
+        @Override
+        public String toString() {
+            return "ClientInfo [ip=" + ip + "]";
+        }
     }
 }
