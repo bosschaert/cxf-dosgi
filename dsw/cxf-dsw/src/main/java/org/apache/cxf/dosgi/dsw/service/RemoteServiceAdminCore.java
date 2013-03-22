@@ -18,9 +18,7 @@
  */
 package org.apache.cxf.dosgi.dsw.service;
 
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Proxy;
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -251,6 +249,8 @@ public class RemoteServiceAdminCore implements RemoteServiceAdmin {
                     }
                     */
                     if (RemoteServiceFactory.class.isAssignableFrom(interfaceClass)) {
+                        Class<?> actualIntf = (Class<?>) serviceReference.getProperty("service.exported.type");
+                        /*
                         Class<?> actualIntf = null;
                         for(Type type : interfaceClass.getGenericInterfaces()) {
                             if (type instanceof ParameterizedType) {
@@ -266,6 +266,7 @@ public class RemoteServiceAdminCore implements RemoteServiceAdmin {
                                 }
                             }
                         }
+                        */
                         if (actualIntf == null)
                             throw new IllegalArgumentException("The implemented RemoteServiceFactory is not parameterized with an interface: " + interfaceClass);
                         interfaceClass = actualIntf;
