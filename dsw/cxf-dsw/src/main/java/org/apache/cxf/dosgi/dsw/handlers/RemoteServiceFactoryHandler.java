@@ -45,10 +45,12 @@ public class RemoteServiceFactoryHandler implements InvocationHandler {
         ClientInfo clientInfo = new CXFClientInfo(clientIP);
 
         Object svc = remoteServiceFactory.getService(clientInfo, serviceReference, method, args);
+        Object rv = null;
         try {
-            return method.invoke(svc, args);
+            rv = method.invoke(svc, args);
+            return rv;
         } finally {
-            remoteServiceFactory.ungetService(clientInfo, serviceReference, svc, method, args);
+            remoteServiceFactory.ungetService(clientInfo, serviceReference, svc, method, args, rv);
         }
     }
 

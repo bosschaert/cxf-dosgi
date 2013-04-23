@@ -46,5 +46,5 @@ public interface RemoteServiceFactory<T> {
      * @param args
      * @param method
      */
-    public void ungetService(ClientInfo client, ServiceReference /*<T>*/ reference, T service, Method method, Object[] args);
+    public void ungetService(ClientInfo client, ServiceReference /*<T>*/ reference, T service, Method method, Object[] args, Object rv);
 }
