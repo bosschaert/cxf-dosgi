@@ -1,6 +1,8 @@
 package org.apache.cxf.dosgi.dsw.service;
 
+import org.apache.cxf.dosgi.dsw.ClientInfo;
 import org.apache.cxf.dosgi.dsw.RemoteServiceInvocationHandler;
+import org.apache.cxf.dosgi.dsw.handlers.OSGiRemoteServiceInvocationHandler;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.framework.InvalidSyntaxException;
@@ -15,12 +17,12 @@ public class CXFRemoteServiceMetadataHandlerImpl implements CXFRemoteServiceMeta
 
     public String[] getServiceVariableNames(long id) {
         System.out.println("^^^ in getServiceVariableNames() : " + id);
-        return getHandler(id).listServiceVariablesNames(null);
+        return getHandler(id).listServiceVariablesNames(getClientContext());
     }
 
     public String getServiceVariable(long id, String name) {
         System.out.println("^^^ in getServiceVariable() : " + id + "^" + name);
-        return getHandler(id).getServiceVariable(null, name);
+        return getHandler(id).getServiceVariable(getClientContext(), name);
     }
 
     private RemoteServiceInvocationHandler<?> getHandler(long id) {
@@ -37,5 +39,13 @@ public class CXFRemoteServiceMetadataHandlerImpl implements CXFRemoteServiceMeta
         } catch (InvalidSyntaxException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private ClientInfo getClientContext() {
+        String clientIP = OSGiRemoteServiceInvocationHandler.ipAddress.get();
+        if (clientIP == null)
+            throw new IllegalArgumentException("Unable to obtain client IP");
+
+        return new OSGiRemoteServiceInvocationHandler.CXFClientInfo(clientIP);
     }
 }

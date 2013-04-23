@@ -27,14 +27,15 @@ import org.apache.cxf.dosgi.dsw.RemoteServiceInvocationHandler;
 import org.osgi.framework.ServiceReference;
 
 public class OSGiRemoteServiceInvocationHandler implements InvocationHandler {
-    static ThreadLocal<String> ipAddress = new ThreadLocal<String>();
+    // a bit of a hack, a place to store the current client-side IP address. Need to move elsewhere.
+    public static ThreadLocal<String> ipAddress = new ThreadLocal<String>();
 
     private final ServiceReference serviceReference;
-    private final RemoteServiceInvocationHandler<?> remoteServiceFactory;
+    private final RemoteServiceInvocationHandler<?> remoteInvocationHandler;
 
     public OSGiRemoteServiceInvocationHandler(ServiceReference sr, RemoteServiceInvocationHandler<?> factory) {
         serviceReference = sr;
-        remoteServiceFactory = factory;
+        remoteInvocationHandler = factory;
     }
 
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
@@ -44,10 +45,10 @@ public class OSGiRemoteServiceInvocationHandler implements InvocationHandler {
 
         ClientInfo clientInfo = new CXFClientInfo(clientIP);
 
-        return remoteServiceFactory.invoke(clientInfo, serviceReference, method, args);
+        return remoteInvocationHandler.invoke(clientInfo, serviceReference, method, args);
     }
 
-    private static class CXFClientInfo implements ClientInfo {
+    public static class CXFClientInfo implements ClientInfo {
         private final String ip;
 
         public CXFClientInfo(String clientIP) {
