@@ -22,7 +22,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.security.Principal;
 
-import org.apache.cxf.dosgi.dsw.ClientInfo;
+import org.apache.cxf.dosgi.dsw.ClientContext;
 import org.apache.cxf.dosgi.dsw.RemoteServiceInvocationHandler;
 import org.osgi.framework.ServiceReference;
 
@@ -43,12 +43,12 @@ public class OSGiRemoteServiceInvocationHandler implements InvocationHandler {
         if (clientIP == null)
             throw new IllegalArgumentException("Unable to establish client IP");
 
-        ClientInfo clientInfo = new CXFClientInfo(clientIP);
+        ClientContext clientInfo = new CXFClientInfo(clientIP);
 
         return remoteInvocationHandler.invoke(clientInfo, serviceReference, method, args);
     }
 
-    public static class CXFClientInfo implements ClientInfo {
+    public static class CXFClientInfo implements ClientContext {
         private final String ip;
 
         public CXFClientInfo(String clientIP) {
