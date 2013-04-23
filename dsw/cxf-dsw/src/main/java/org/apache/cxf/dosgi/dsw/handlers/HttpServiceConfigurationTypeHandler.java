@@ -197,7 +197,7 @@ public class HttpServiceConfigurationTypeHandler extends AbstractPojoConfigurati
             @Override
             public void service(ServletRequest request, ServletResponse response) throws ServletException, IOException {
                 // TODO this also needs to be available in plain Jetty requests, not just for the HTTP service
-                RemoteServiceFactoryHandler.ipAddress.set(request.getRemoteHost());
+                OSGiRemoteServiceInvocationHandler.ipAddress.set(request.getRemoteHost());
                 super.service(request, response);
             }
     	};

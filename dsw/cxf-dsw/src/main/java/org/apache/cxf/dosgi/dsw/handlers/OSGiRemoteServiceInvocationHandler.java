@@ -23,16 +23,16 @@ import java.lang.reflect.Method;
 import java.security.Principal;
 
 import org.apache.cxf.dosgi.dsw.ClientInfo;
-import org.apache.cxf.dosgi.dsw.RemoteServiceFactory;
+import org.apache.cxf.dosgi.dsw.RemoteServiceInvocationHandler;
 import org.osgi.framework.ServiceReference;
 
-public class RemoteServiceFactoryHandler implements InvocationHandler {
+public class OSGiRemoteServiceInvocationHandler implements InvocationHandler {
     static ThreadLocal<String> ipAddress = new ThreadLocal<String>();
 
     private final ServiceReference serviceReference;
-    private final RemoteServiceFactory remoteServiceFactory;
+    private final RemoteServiceInvocationHandler<?> remoteServiceFactory;
 
-    public RemoteServiceFactoryHandler(ServiceReference sr, RemoteServiceFactory<?> factory) {
+    public OSGiRemoteServiceInvocationHandler(ServiceReference sr, RemoteServiceInvocationHandler<?> factory) {
         serviceReference = sr;
         remoteServiceFactory = factory;
     }
@@ -44,14 +44,7 @@ public class RemoteServiceFactoryHandler implements InvocationHandler {
 
         ClientInfo clientInfo = new CXFClientInfo(clientIP);
 
-        Object svc = remoteServiceFactory.getService(clientInfo, serviceReference, method, args);
-        Object rv = null;
-        try {
-            rv = method.invoke(svc, args);
-            return rv;
-        } finally {
-            remoteServiceFactory.ungetService(clientInfo, serviceReference, svc, method, args, rv);
-        }
+        return remoteServiceFactory.invoke(clientInfo, serviceReference, method, args);
     }
 
     private static class CXFClientInfo implements ClientInfo {

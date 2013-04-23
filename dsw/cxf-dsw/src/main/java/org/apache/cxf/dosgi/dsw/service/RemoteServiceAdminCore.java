@@ -37,11 +37,11 @@ import org.apache.cxf.common.logging.LogUtils;
 import org.apache.cxf.dosgi.dsw.ClassUtils;
 import org.apache.cxf.dosgi.dsw.Constants;
 import org.apache.cxf.dosgi.dsw.OsgiUtils;
-import org.apache.cxf.dosgi.dsw.RemoteServiceFactory;
+import org.apache.cxf.dosgi.dsw.RemoteServiceInvocationHandler;
 import org.apache.cxf.dosgi.dsw.handlers.ClientServiceFactory;
 import org.apache.cxf.dosgi.dsw.handlers.ConfigTypeHandlerFactory;
 import org.apache.cxf.dosgi.dsw.handlers.ConfigurationTypeHandler;
-import org.apache.cxf.dosgi.dsw.handlers.RemoteServiceFactoryHandler;
+import org.apache.cxf.dosgi.dsw.handlers.OSGiRemoteServiceInvocationHandler;
 import org.apache.cxf.dosgi.dsw.qos.IntentMap;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -241,38 +241,10 @@ public class RemoteServiceAdminCore implements RemoteServiceAdmin {
                 Class<?> interfaceClass = ClassUtils.getInterfaceClass(serviceObject, iface);
 
                 if (interfaceClass != null) {
-                    /*
-                    Object rsf = serviceReference.getProperty("org.coderthoughts.remote.service.factory");
-                    if (rsf instanceof RemoteServiceFactory) {
-                        RemoteServiceFactoryHandler rsfHandler = new RemoteServiceFactoryHandler(serviceReference, (RemoteServiceFactory) rsf);
-                        serviceObject = Proxy.newProxyInstance(serviceObject.getClass().getClassLoader(), new Class<?>[] {interfaceClass}, rsfHandler);
-                    }
-                    */
-                    if (RemoteServiceFactory.class.isAssignableFrom(interfaceClass)) {
-                        Class<?> actualIntf = (Class<?>) serviceReference.getProperty("service.exported.type");
-                        /*
-                        Class<?> actualIntf = null;
-                        for(Type type : interfaceClass.getGenericInterfaces()) {
-                            if (type instanceof ParameterizedType) {
-                                ParameterizedType pt = (ParameterizedType) type;
-                                for(Type typeArg : pt.getActualTypeArguments()) {
-                                    if (typeArg instanceof Class) {
-                                        Class<?> cls = (Class<?>) typeArg;
-                                        if (cls.isInterface()) {
-                                            actualIntf = cls;
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        */
-                        if (actualIntf == null)
-                            throw new IllegalArgumentException("The implemented RemoteServiceFactory is not parameterized with an interface: " + interfaceClass);
-                        interfaceClass = actualIntf;
-
-                        RemoteServiceFactoryHandler rsfHandler = new RemoteServiceFactoryHandler(serviceReference, (RemoteServiceFactory<?>) serviceObject);
-                        serviceObject = Proxy.newProxyInstance(serviceObject.getClass().getClassLoader(), new Class<?>[] {interfaceClass}, rsfHandler);
+                    Object rsih = serviceReference.getProperty("service.exported.handler");
+                    if (rsih instanceof RemoteServiceInvocationHandler) {
+                        OSGiRemoteServiceInvocationHandler cxfHandler = new OSGiRemoteServiceInvocationHandler(serviceReference, (RemoteServiceInvocationHandler<?>) rsih);
+                        serviceObject = Proxy.newProxyInstance(serviceObject.getClass().getClassLoader(), new Class<?>[] {interfaceClass}, cxfHandler);
                     }
 
                     BundleContext callingContext = serviceReference.getBundle().getBundleContext();

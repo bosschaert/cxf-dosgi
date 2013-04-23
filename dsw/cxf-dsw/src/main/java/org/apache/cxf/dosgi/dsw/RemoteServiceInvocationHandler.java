@@ -25,26 +25,27 @@ import org.osgi.framework.ServiceReference;
 /**
  * Provides control over services used by remote clients.
  */
-public interface RemoteServiceFactory<T> {
-    /**
-     * Called before every invocation of the service by a remote client.
-     *
-     * @param clientIP The IP Address of the client.
-     * @param reference The OSGi Service Reference of the service being invoked.
-     * @param args
-     * @param method
-     * @return The Service Object for the client to use.
-     */
-    public T getService(ClientInfo client, ServiceReference /*<T>*/ reference, Method method, Object[] args);
-
-    /**
-     * Called after every invocation of the service by a remote client.
-     *
-     * @param clientIP The IP Address of the client.
-     * @param reference The OSGi Service Reference of the service that was invoked.
-     * @param service The Service Object that the client invoked.
-     * @param args
-     * @param method
-     */
-    public void ungetService(ClientInfo client, ServiceReference /*<T>*/ reference, T service, Method method, Object[] args, Object rv);
+public interface RemoteServiceInvocationHandler<T> {
+    public Object invoke(ClientInfo client, ServiceReference /*<T>*/ reference, Method method, Object[] args);
+//    /**
+//     * Called before every invocation of the service by a remote client.
+//     *
+//     * @param clientIP The IP Address of the client.
+//     * @param reference The OSGi Service Reference of the service being invoked.
+//     * @param args
+//     * @param method
+//     * @return The Service Object for the client to use.
+//     */
+//    public T getService(ClientInfo client, ServiceReference /*<T>*/ reference, Method method, Object[] args);
+//
+//    /**
+//     * Called after every invocation of the service by a remote client.
+//     *
+//     * @param clientIP The IP Address of the client.
+//     * @param reference The OSGi Service Reference of the service that was invoked.
+//     * @param service The Service Object that the client invoked.
+//     * @param args
+//     * @param method
+//     */
+//    public void ungetService(ClientInfo client, ServiceReference /*<T>*/ reference, T service, Method method, Object[] args, Object rv);
 }
