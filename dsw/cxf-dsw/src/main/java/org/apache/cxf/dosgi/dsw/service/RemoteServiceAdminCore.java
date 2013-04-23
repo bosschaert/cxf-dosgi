@@ -84,6 +84,7 @@ public class RemoteServiceAdminCore implements RemoteServiceAdmin {
     public RemoteServiceAdminCore(BundleContext bc) {
         bctx = bc;
         eventProducer = new EventProducer(bctx);
+        registerServiceMetadataService(bctx);
     }
 
     public List exportService(ServiceReference serviceReference, Map additionalProperties)
@@ -243,8 +244,12 @@ public class RemoteServiceAdminCore implements RemoteServiceAdmin {
                 if (interfaceClass != null) {
                     Object rsih = serviceReference.getProperty("service.exported.handler");
                     if (rsih instanceof RemoteServiceInvocationHandler) {
-                        OSGiRemoteServiceInvocationHandler cxfHandler = new OSGiRemoteServiceInvocationHandler(serviceReference, (RemoteServiceInvocationHandler<?>) rsih);
+                        RemoteServiceInvocationHandler<?> ih = (RemoteServiceInvocationHandler<?>) rsih;
+                        OSGiRemoteServiceInvocationHandler cxfHandler = new OSGiRemoteServiceInvocationHandler(serviceReference, ih);
                         serviceObject = Proxy.newProxyInstance(serviceObject.getClass().getClassLoader(), new Class<?>[] {interfaceClass}, cxfHandler);
+                    } else if (rsih != null) {
+                        throw new IllegalStateException("Wrong value for property 'service.exported.handler'. Should be an instance of a class implementing " +
+                                RemoteServiceInvocationHandler.class + " but was: " + rsih);
                     }
 
                     BundleContext callingContext = serviceReference.getBundle().getBundleContext();
@@ -272,6 +277,14 @@ public class RemoteServiceAdminCore implements RemoteServiceAdmin {
         }
     }
 
+    private static CXFRemoteServiceMetadataHandler registerServiceMetadataService(BundleContext context) {
+        CXFRemoteServiceMetadataHandler handler = new CXFRemoteServiceMetadataHandlerImpl(context);
+        Dictionary<String, Object> props = new Hashtable<String, Object>();
+        props.put("service.exported.interfaces", "*");
+        props.put("service.exported.configs", new String [] {"org.coderthoughts.configtype.cloud", "<<nodefault>>"});
+        context.registerService(CXFRemoteServiceMetadataHandler.class.getName(), handler, props);
+        return handler;
+    }
 
     protected List<String> determineConfigurationTypes(Properties serviceProperties) {
 
@@ -441,6 +454,8 @@ public class RemoteServiceAdminCore implements RemoteServiceAdmin {
                 Dictionary serviceProps = new Hashtable(imReg.getImportedEndpointDescription()
                     .getProperties());
                 serviceProps.put(RemoteConstants.SERVICE_IMPORTED, true);
+                // TODO only add this if there is metadata
+                serviceProps.put("service.imported.metadata", new ServiceMetadataHandler(bctx, serviceProps));
                 serviceProps.remove(RemoteConstants.SERVICE_EXPORTED_INTERFACES);
 
                 // synchronized (discoveredServices) {

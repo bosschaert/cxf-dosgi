@@ -48,4 +48,8 @@ public interface RemoteServiceInvocationHandler<T> {
 //     * @param method
 //     */
 //    public void ungetService(ClientInfo client, ServiceReference /*<T>*/ reference, T service, Method method, Object[] args, Object rv);
+
+    String[] listServiceVariablesNames(ClientInfo client);
+
+    String getServiceVariable(ClientInfo client, String name);
 }
