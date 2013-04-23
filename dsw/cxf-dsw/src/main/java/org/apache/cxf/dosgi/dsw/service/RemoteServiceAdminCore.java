@@ -20,6 +20,7 @@ package org.apache.cxf.dosgi.dsw.service;
 
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Dictionary;
@@ -280,9 +281,10 @@ public class RemoteServiceAdminCore implements RemoteServiceAdmin {
     private static CXFRemoteServiceMetadataHandler registerServiceMetadataService(BundleContext context) {
         CXFRemoteServiceMetadataHandler handler = new CXFRemoteServiceMetadataHandlerImpl(context);
         Dictionary<String, Object> props = new Hashtable<String, Object>();
-        props.put("service.exported.interfaces", "*");
+        props.put("service.exported.interfaces", CXFRemoteServiceMetadataHandler.class.getName());
         props.put("service.exported.configs", new String [] {"org.coderthoughts.configtype.cloud", "<<nodefault>>"});
-        context.registerService(CXFRemoteServiceMetadataHandler.class.getName(), handler, props);
+        ServiceRegistration reg = context.registerService(CXFRemoteServiceMetadataHandler.class.getName(), handler, props);
+        System.out.println("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% registering handler: " + reg);
         return handler;
     }
 
@@ -311,6 +313,15 @@ public class RemoteServiceAdminCore implements RemoteServiceAdmin {
     }
 
     private boolean isCreatedByThisRSA(ServiceReference sref) {
+        /* is this whole method needed anyway? */
+        Object objClass = sref.getProperty("objectClass");
+        if (objClass instanceof String[]) {
+            String [] classes = (String[]) objClass;
+            if (Arrays.asList(classes).contains(CXFRemoteServiceMetadataHandler.class.getName())) {
+                return false;
+            }
+        }
+
         return sref.getBundle().equals(bctx.getBundle());
     }
 
