@@ -18,6 +18,7 @@
  */
 package org.apache.cxf.dosgi.dsw.service;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.cxf.dosgi.dsw.ClientContext;
@@ -44,7 +45,17 @@ public class CXFRemoteServiceMetadataHandlerImpl implements CXFRemoteServiceMeta
     }
 
     public Map<String, String> getServiceVariables(long id, String... filter) {
-        return getHandler(id).getServiceVariables(getClientContext(), filter);
+        RemoteServiceMetadataHandler handler = getHandler(id);
+
+        Map<String, String> m = new HashMap<String, String>();
+        for (String var : handler.listServiceVariablesNames(getClientContext())) {
+            try {
+                m.put(var, handler.getServiceVariable(getClientContext(), var));
+            } catch (Throwable th) {
+                m.put(var, th.getMessage());
+            }
+        }
+        return m;
     }
 
     private RemoteServiceMetadataHandler getHandler(long id) {
