@@ -23,8 +23,19 @@ import java.lang.reflect.Method;
 import org.osgi.framework.ServiceReference;
 
 /**
- * Provides control over services used by remote clients.
+ * Provides control over services used by remote clients. When an instance of this class
+ * is attached to the "service.exported.handler" property of the service registration the
+ * handler will be called for each remote invocation instead of the service object directly.
  */
 public interface RemoteServiceInvocationHandler<T> {
-    public Object invoke(ClientContext client, ServiceReference /*<T>*/ reference, Method method, Object[] args);
+    /**
+     * Invoke the service on behalf of a remote client.
+     * @param client Information in relation to the client.
+     * @param reference The Service Reference representing the service being invoked.
+     * @param method The method of the service being invoked.
+     * @param args The method arguments.
+     * @return Provide the return value to be returned to the remote client.
+     * @throws Exception if the embedded invocation throws an exception.
+     */
+    public Object invoke(ClientContext client, ServiceReference /*<T>*/ reference, Method method, Object[] args) throws Exception;
 }

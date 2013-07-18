@@ -21,7 +21,7 @@ package org.apache.cxf.dosgi.dsw;
 import java.util.Map;
 
 public interface RemoteServiceMetadataProvider {
-    String[] listServiceVariablesNames();
-    String getServiceVariable(String name);
-    Map<String, String> getServiceVariables(String ... filter);
+    String[] listVariablesNames();
+    String getVariable(String name);
+    Map<String, String> getVariables(String ... filter);
 }

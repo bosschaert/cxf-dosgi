@@ -46,7 +46,7 @@ public class ServiceMetadataHandler implements RemoteServiceMetadataProvider {
     }
 
     // TODO add close method...
-    public String[] listServiceVariablesNames() {
+    public String[] listVariablesNames() {
         Object svc = handlerTracker.getService();
         if (svc instanceof CXFRemoteServiceMetadataHandler) {
             return ((CXFRemoteServiceMetadataHandler) svc).getServiceVariableNames(endpointServiceID);
@@ -54,7 +54,7 @@ public class ServiceMetadataHandler implements RemoteServiceMetadataProvider {
         return null;
     }
 
-    public String getServiceVariable(String name) {
+    public String getVariable(String name) {
         Object svc = handlerTracker.getService();
         if (svc instanceof CXFRemoteServiceMetadataHandler) {
             return ((CXFRemoteServiceMetadataHandler) svc).getServiceVariable(endpointServiceID, name);
@@ -62,7 +62,7 @@ public class ServiceMetadataHandler implements RemoteServiceMetadataProvider {
         return null;
     }
 
-    public Map<String, String> getServiceVariables(String... filters) {
+    public Map<String, String> getVariables(String... filters) {
         Object svc = handlerTracker.getService();
         if (svc instanceof CXFRemoteServiceMetadataHandler) {
             return ((CXFRemoteServiceMetadataHandler) svc).getServiceVariables(endpointServiceID, filters);

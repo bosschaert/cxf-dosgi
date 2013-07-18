@@ -37,7 +37,7 @@ public class CXFRemoteServiceMetadataHandlerImpl implements CXFRemoteServiceMeta
     }
 
     public String[] getServiceVariableNames(long id) {
-        return getHandler(id).listServiceVariablesNames(getClientContext());
+        return getHandler(id).listServiceVariableNames(getClientContext());
     }
 
     public String getServiceVariable(long id, String name) {
@@ -48,7 +48,7 @@ public class CXFRemoteServiceMetadataHandlerImpl implements CXFRemoteServiceMeta
         RemoteServiceMetadataHandler handler = getHandler(id);
 
         Map<String, String> m = new HashMap<String, String>();
-        for (String var : handler.listServiceVariablesNames(getClientContext())) {
+        for (String var : handler.listServiceVariableNames(getClientContext())) {
             try {
                 m.put(var, handler.getServiceVariable(getClientContext(), var));
             } catch (Throwable th) {

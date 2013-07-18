@@ -20,6 +20,6 @@ package org.apache.cxf.dosgi.dsw;
 
 
 public interface RemoteServiceMetadataHandler {
-    String[] listServiceVariablesNames(ClientContext client);
+    String[] listServiceVariableNames(ClientContext client);
     String getServiceVariable(ClientContext client, String name);
 }

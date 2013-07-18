@@ -282,7 +282,7 @@ public class RemoteServiceAdminCore implements RemoteServiceAdmin {
         CXFRemoteServiceMetadataHandler handler = new CXFRemoteServiceMetadataHandlerImpl(context);
         Dictionary<String, Object> props = new Hashtable<String, Object>();
         props.put("service.exported.interfaces", CXFRemoteServiceMetadataHandler.class.getName());
-        props.put("service.exported.configs", new String [] {"org.coderthoughts.configtype.cloud", "<<nodefault>>"});
+        props.put("service.exported.configs", new String [] {"osgi.configtype.ecosystem", "<<nodefault>>"});
         ServiceRegistration reg = context.registerService(CXFRemoteServiceMetadataHandler.class.getName(), handler, props);
         return handler;
     }
