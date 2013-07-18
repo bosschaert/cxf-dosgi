@@ -21,6 +21,8 @@ package org.apache.cxf.dosgi.dsw.handlers;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.security.Principal;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.cxf.dosgi.dsw.ClientContext;
 import org.apache.cxf.dosgi.dsw.RemoteServiceInvocationHandler;
@@ -65,6 +67,12 @@ public class OSGiRemoteServiceInvocationHandler implements InvocationHandler {
 
         public Principal getPrincipal() {
             return null; // TODO
+        }
+
+        public Map<String, Object> getProperties() {
+            Map<String, Object> m = new HashMap<String, Object>();
+            m.put("HostIPAddress", ip);
+            return m;
         }
 
         @Override
