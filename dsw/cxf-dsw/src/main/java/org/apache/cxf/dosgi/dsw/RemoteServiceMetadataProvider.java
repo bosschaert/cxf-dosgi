@@ -18,10 +18,10 @@
  */
 package org.apache.cxf.dosgi.dsw;
 
-import java.util.Map;
+import org.osgi.framework.ServiceReference;
 
 public interface RemoteServiceMetadataProvider {
-    String[] listVariablesNames();
-    String getVariable(String name);
-    Map<String, String> getVariables(String ... filter);
+    RemoteServiceMetadata getMetadata(ServiceReference sref);
+    RemoteServiceMetadata getMetadata(String endpointID);
+    RemoteServiceMetadata getMetadata(String endpointID, String endpointFrameworkUUID);
 }

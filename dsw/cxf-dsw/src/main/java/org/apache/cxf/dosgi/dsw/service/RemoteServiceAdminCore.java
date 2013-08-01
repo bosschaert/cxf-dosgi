@@ -39,6 +39,8 @@ import org.apache.cxf.dosgi.dsw.ClassUtils;
 import org.apache.cxf.dosgi.dsw.Constants;
 import org.apache.cxf.dosgi.dsw.OsgiUtils;
 import org.apache.cxf.dosgi.dsw.RemoteServiceInvocationHandler;
+import org.apache.cxf.dosgi.dsw.RemoteServiceMetadata;
+import org.apache.cxf.dosgi.dsw.RemoteServiceMetadataProvider;
 import org.apache.cxf.dosgi.dsw.handlers.ClientServiceFactory;
 import org.apache.cxf.dosgi.dsw.handlers.ConfigTypeHandlerFactory;
 import org.apache.cxf.dosgi.dsw.handlers.ConfigurationTypeHandler;
@@ -62,13 +64,17 @@ public class RemoteServiceAdminCore implements RemoteServiceAdmin {
     private final LinkedHashMap<ServiceReference, Collection<ExportRegistrationImpl>> exportedServices = new LinkedHashMap<ServiceReference, Collection<ExportRegistrationImpl>>();
     private final LinkedHashMap<EndpointDescription, Collection<ImportRegistrationImpl>> importedServices = new LinkedHashMap<EndpointDescription, Collection<ImportRegistrationImpl>>();
 
-    private BundleContext bctx;
+    private final BundleContext bctx;
+    private final ServiceRegistration metadataProviderRegistration;
+    private final RemoteServiceMetadataProviderImpl serviceMetadataProvider;
 
     private EventProducer eventProducer;
 
     private volatile boolean useMasterMap = true;
     private volatile String defaultPort;
     private volatile String defaultHost;
+
+
 
     // protected because of tests
     protected static final List<String> supportedConfigurationTypes = new ArrayList<String>();
@@ -85,7 +91,8 @@ public class RemoteServiceAdminCore implements RemoteServiceAdmin {
     public RemoteServiceAdminCore(BundleContext bc) {
         bctx = bc;
         eventProducer = new EventProducer(bctx);
-        registerServiceMetadataService(bctx);
+        serviceMetadataProvider = new RemoteServiceMetadataProviderImpl();
+        metadataProviderRegistration = registerServiceMetadataService(bctx, serviceMetadataProvider);
     }
 
     public List exportService(ServiceReference serviceReference, Map additionalProperties)
@@ -278,13 +285,16 @@ public class RemoteServiceAdminCore implements RemoteServiceAdmin {
         }
     }
 
-    private static CXFRemoteServiceMetadataHandler registerServiceMetadataService(BundleContext context) {
+    private static ServiceRegistration registerServiceMetadataService(BundleContext context, RemoteServiceMetadataProvider smp) {
+        // This is the back end service that answers any service variable questions
         CXFRemoteServiceMetadataHandler handler = new CXFRemoteServiceMetadataHandlerImpl(context);
         Dictionary<String, Object> props = new Hashtable<String, Object>();
         props.put("service.exported.interfaces", CXFRemoteServiceMetadataHandler.class.getName());
         props.put("service.exported.configs", new String [] {"osgi.configtype.ecosystem", "<<nodefault>>"});
-        ServiceRegistration reg = context.registerService(CXFRemoteServiceMetadataHandler.class.getName(), handler, props);
-        return handler;
+        context.registerService(CXFRemoteServiceMetadataHandler.class.getName(), handler, props);
+
+        // This is the client side service that users interact with to obtain service variables
+        return context.registerService(RemoteServiceMetadataProvider.class.getName(), smp, null);
     }
 
     protected List<String> determineConfigurationTypes(Properties serviceProperties) {
@@ -464,9 +474,20 @@ public class RemoteServiceAdminCore implements RemoteServiceAdmin {
                 Dictionary serviceProps = new Hashtable(imReg.getImportedEndpointDescription()
                     .getProperties());
                 serviceProps.put(RemoteConstants.SERVICE_IMPORTED, true);
-                // TODO only add this if there is metadata
-                serviceProps.put("service.imported.metadata", new ServiceMetadataHandler(bctx, serviceProps));
                 serviceProps.remove(RemoteConstants.SERVICE_EXPORTED_INTERFACES);
+//                 TODO only add this if there is metadata
+//                serviceProps.put("service.imported.metadata", new ServiceMetadataProvider(bctx, serviceProps));
+
+                /* */
+                // ServiceMetadata handling...
+                RemoteServiceMetadata rsm = new RemoteServiceMetadataImpl(bctx, serviceProps);
+                String endpointID = (String) serviceProps.get(RemoteConstants.ENDPOINT_ID);
+                String endpointFrameworkUUID = (String) serviceProps.get(RemoteConstants.ENDPOINT_FRAMEWORK_UUID);
+                serviceMetadataProvider.addMetadata(endpointID, endpointFrameworkUUID, rsm);
+                Dictionary<String, Object> props = getServiceRegistrationProperties(metadataProviderRegistration);
+                props.put(endpointID + ":" + endpointFrameworkUUID, rsm.getVariable("service.status"));
+                metadataProviderRegistration.setProperties(props);
+                /* */
 
                 // synchronized (discoveredServices) {
                 ClientServiceFactory csf = new ClientServiceFactory(actualContext, iClass, imReg
@@ -488,6 +509,14 @@ public class RemoteServiceAdminCore implements RemoteServiceAdmin {
             LOG.warning("No class can be found for " + interfaceName);
             imReg.setException(ex);
         }
+    }
+
+    private Dictionary<String, Object> getServiceRegistrationProperties(ServiceRegistration reg) {
+        Dictionary<String, Object> dict = new Hashtable<String, Object>();
+        for (String key : reg.getReference().getPropertyKeys()) {
+            dict.put(key, reg.getReference().getProperty(key));
+        }
+        return dict;
     }
 
     /**
