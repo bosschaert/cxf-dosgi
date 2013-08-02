@@ -46,6 +46,7 @@ import org.apache.cxf.dosgi.dsw.handlers.ConfigTypeHandlerFactory;
 import org.apache.cxf.dosgi.dsw.handlers.ConfigurationTypeHandler;
 import org.apache.cxf.dosgi.dsw.handlers.OSGiRemoteServiceInvocationHandler;
 import org.apache.cxf.dosgi.dsw.qos.IntentMap;
+import org.apache.cxf.dosgi.dsw.service.RemoteServiceMetadataImpl.UpdateStatusPropertyCallBack;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
@@ -480,13 +481,23 @@ public class RemoteServiceAdminCore implements RemoteServiceAdmin {
 
                 /* */
                 // ServiceMetadata handling...
-                RemoteServiceMetadata rsm = new RemoteServiceMetadataImpl(bctx, serviceProps);
-                String endpointID = (String) serviceProps.get(RemoteConstants.ENDPOINT_ID);
-                String endpointFrameworkUUID = (String) serviceProps.get(RemoteConstants.ENDPOINT_FRAMEWORK_UUID);
-                serviceMetadataProvider.addMetadata(endpointID, endpointFrameworkUUID, rsm);
-                Dictionary<String, Object> props = getServiceRegistrationProperties(metadataProviderRegistration);
-                props.put(endpointID + ":" + endpointFrameworkUUID, rsm.getVariable("service.status"));
-                metadataProviderRegistration.setProperties(props);
+                final String endpointID = (String) serviceProps.get(RemoteConstants.ENDPOINT_ID);
+                final String endpointFrameworkUUID = (String) serviceProps.get(RemoteConstants.ENDPOINT_FRAMEWORK_UUID);
+                new RemoteServiceMetadataImpl(bctx, serviceProps, new UpdateStatusPropertyCallBack() {
+                    public void updateStatusProperty(RemoteServiceMetadata rsm, String status) {
+                        Dictionary<String, Object> props = getServiceRegistrationProperties(metadataProviderRegistration);
+                        props.put(endpointID + ":" + endpointFrameworkUUID, "" + status);
+                        metadataProviderRegistration.setProperties(props);
+
+                        serviceMetadataProvider.addMetadata(endpointID, endpointFrameworkUUID, rsm);
+                    }
+                });
+
+                /*
+                System.out.println("************* Adding RSM for service: " + endpointID);
+                System.out.println("*** " + Arrays.toString(rsm.listVariablesNames()));
+                System.out.println("*** Status: " + rsm.getVariable("service.status"));
+                System.out.println("*** Remaining Invocations: " + rsm.getVariable("remaining.invocations"));
                 /* */
 
                 // synchronized (discoveredServices) {

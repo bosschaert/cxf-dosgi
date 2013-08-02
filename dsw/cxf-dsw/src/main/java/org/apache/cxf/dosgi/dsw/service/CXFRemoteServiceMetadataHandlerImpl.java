@@ -18,6 +18,7 @@
  */
 package org.apache.cxf.dosgi.dsw.service;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,15 +38,25 @@ public class CXFRemoteServiceMetadataHandlerImpl implements CXFRemoteServiceMeta
     }
 
     public String[] getServiceVariableNames(long id) {
-        return getHandler(id).listServiceVariableNames(getClientContext());
+        System.out.println("### getServiceVariableNames" + id);
+        RemoteServiceMetadataHandler handler = getHandler(id);
+        if (handler == null)
+            return new String [] {};
+        return handler.listServiceVariableNames(getClientContext());
     }
 
     public String getServiceVariable(long id, String name) {
-        return getHandler(id).getServiceVariable(getClientContext(), name);
+        System.out.println("### getServiceVariable" + id + ":" + name);
+        RemoteServiceMetadataHandler handler = getHandler(id);
+        if (handler == null)
+            return null;
+        return handler.getServiceVariable(getClientContext(), name);
     }
 
     public Map<String, String> getServiceVariables(long id, String... filter) {
         RemoteServiceMetadataHandler handler = getHandler(id);
+        if (handler == null)
+            return Collections.emptyMap();
 
         Map<String, String> m = new HashMap<String, String>();
         for (String var : handler.listServiceVariableNames(getClientContext())) {
@@ -66,6 +77,7 @@ public class CXFRemoteServiceMetadataHandlerImpl implements CXFRemoteServiceMeta
 
             Object handler = refs[0].getProperty("service.exported.handler");
             if (handler instanceof RemoteServiceMetadataHandler) {
+                System.out.println("### Found handler for service: " + id);
                 return (RemoteServiceMetadataHandler) handler;
             }
             return null;
