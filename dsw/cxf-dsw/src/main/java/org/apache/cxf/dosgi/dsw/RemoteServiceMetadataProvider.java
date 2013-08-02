@@ -28,24 +28,28 @@ public interface RemoteServiceMetadataProvider {
      * Obtain Remote Service Metadata for a given service, identified by
      * a Service Reference.
      * @param sref The Service Reference
-     * @return The Remote Service Metadata for the service or {@code null} if there is
-     * no metadata for this service or it is not a remote service.
+     * @return The Remote Service Metadata for the service or {@code null} if there
+     * is no metadata for this service or it does not reference a remote service.
      */
     RemoteServiceMetadata getMetadata(ServiceReference sref);
 
     /**
      * Obtain Remote Service Metadata for a service denoted by an endpoint ID.
-     * @param endpointID The endpoint ID as advertised via the endpoint.id service property of remote service.
+     * @param endpointID The endpoint ID as advertised via the {@code endpoint.id}
+     * service property of a remote service.
      * @return The Remote Service Metadata for the endpoint or {@code null} if no
      * metadata for this service can be found.
      */
     RemoteServiceMetadata getMetadata(String endpointID);
 
     /**
-     * Obtain Remote Service Metadata for a service denoted by an endpoint ID and framework UUID.
-     * This variant can be useful if endpoint IDs are not unique across frameworks.
-     * @param endpointID The endpoint ID as advertised via the endpoint.id service property of remote service.
-     * @param endpointFrameworkUUID The framework uuid as advertised via the endpoint.framework.uuid property.
+     * Obtain Remote Service Metadata for a service denoted by an endpoint ID and
+     * framework UUID. This variant can be useful if endpoint IDs are not unique
+     * across frameworks.
+     * @param endpointID The endpoint ID as advertised via the {@code endpoint.id}
+     * service property of remote service.
+     * @param endpointFrameworkUUID The framework uuid as advertised via the
+     * {@code endpoint.framework.uuid} property.
      * @return The Remote Service Metadata for the endpoint or {@code null} if no
      * metadata for this service can be found.
      */
